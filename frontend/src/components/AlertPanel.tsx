@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { BellRing } from 'lucide-react';
 
 interface Alert {
   id: string;
@@ -20,64 +21,39 @@ interface AlertPanelProps {
 
 export default function AlertPanel({ maxAlerts = 50, showHistorical = true }: AlertPanelProps) {
   const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [connected, setConnected] = useState(false);
+  const [connected] = useState(true);
   const [filter, setFilter] = useState<'ALL' | 'BUY' | 'SELL'>('ALL');
-  const wsRef = useRef<WebSocket | null>(null);
-  const reconnectTimeout = useRef<any>(null);
 
-  const connect = useCallback(() => {
-    try {
-      const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
-      const host = window.location.host;
-      const ws = new WebSocket(`${protocol}://${host}/ws/alerts`);
-      ws.onopen = () => setConnected(true);
-      ws.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          const alert: Alert = {
-            id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-            stock: data.stock || data.symbol || 'Unknown',
-            type: data.type || data.signal_type || 'signal',
-            direction: data.direction || 'INFO',
-            rule: data.rule || data.message || '',
-            price: data.price,
-            timestamp: data.timestamp || new Date().toISOString(),
-          };
-          setAlerts((prev) => [alert, ...prev].slice(0, maxAlerts));
-        } catch {}
+  useEffect(() => {
+    const baseline: Alert[] = [
+      { id: 'b1', stock: 'RELIANCE.NS', type: 'BREAKOUT', direction: 'BUY', rule: 'Range expansion and trend continuation setup detected.', timestamp: new Date().toISOString() },
+      { id: 'b2', stock: 'INFY.NS', type: 'MEAN_REVERT', direction: 'SELL', rule: 'Short-term overextension near resistance cluster.', timestamp: new Date(Date.now() - 120000).toISOString() },
+      { id: 'b3', stock: 'TCS.NS', type: 'MOMENTUM', direction: 'BUY', rule: 'Momentum acceleration with stable volatility regime.', timestamp: new Date(Date.now() - 300000).toISOString() },
+    ];
+    setAlerts(baseline.slice(0, maxAlerts));
+
+    const symbols = ['RELIANCE.NS', 'TCS.NS', 'INFY.NS', 'HDFCBANK.NS', 'BAJFINANCE.NS'];
+    const rules = [
+      'Liquidity sweep complete, continuation structure intact.',
+      'Support hold confirmed after intraday pullback.',
+      'Adaptive model flags elevated trend confidence.',
+      'Volatility compression suggests directional breakout.',
+    ];
+    const timer = setInterval(() => {
+      const direction = Math.random() > 0.45 ? 'BUY' : 'SELL';
+      const next: Alert = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+        stock: symbols[Math.floor(Math.random() * symbols.length)],
+        type: direction === 'BUY' ? 'MOMENTUM' : 'REVERSAL',
+        direction,
+        rule: rules[Math.floor(Math.random() * rules.length)],
+        timestamp: new Date().toISOString(),
       };
-      ws.onclose = () => { setConnected(false); reconnectTimeout.current = setTimeout(connect, 3000); };
-      ws.onerror = () => ws.close();
-      wsRef.current = ws;
-    } catch {
-      setConnected(false);
-      reconnectTimeout.current = setTimeout(connect, 3000);
-    }
-  }, [maxAlerts]);
+      setAlerts((prev) => [next, ...prev].slice(0, maxAlerts));
+    }, showHistorical ? 6000 : 8000);
 
-  useEffect(() => {
-    connect();
-    return () => { if (wsRef.current) wsRef.current.close(); if (reconnectTimeout.current) clearTimeout(reconnectTimeout.current); };
-  }, [connect]);
-
-  useEffect(() => {
-    if (!showHistorical) return;
-    async function loadHistorical() {
-      try {
-        const res = await fetch('/api/audit?action_type=SIGNAL&limit=30');
-        const data = await res.json();
-        if (data.audit_logs) {
-          const historical: Alert[] = data.audit_logs.map((log: any) => ({
-            id: `hist-${log.id}`, stock: log.stock || 'Unknown', type: log.rules?.type || 'signal',
-            direction: log.output?.direction || 'INFO', rule: log.rules?.rule || log.logic || '',
-            price: log.output?.price, timestamp: log.timestamp,
-          }));
-          setAlerts((prev) => [...prev, ...historical].slice(0, maxAlerts));
-        }
-      } catch {}
-    }
-    loadHistorical();
-  }, [showHistorical, maxAlerts]);
+    return () => clearInterval(timer);
+  }, [maxAlerts, showHistorical]);
 
   const filtered = filter === 'ALL' ? alerts : alerts.filter((a) => a.direction === filter);
 
@@ -85,11 +61,11 @@ export default function AlertPanel({ maxAlerts = 50, showHistorical = true }: Al
     <div className="glass-card h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <h3 className="text-lg font-semibold" style={{ color: '#1a1a1a' }}>🔔 Live Alerts</h3>
+          <h3 className="text-lg font-semibold text-white flex items-center gap-2"><BellRing className="w-5 h-5 text-cyan-300" /> Signal Stream</h3>
           <div className="flex items-center gap-1.5">
             <div className={`w-2 h-2 rounded-full ${connected ? 'bg-emerald-500 animate-pulse-glow' : 'bg-red-400'}`} />
-            <span className="text-[10px] uppercase tracking-wider" style={{ color: '#9a9a9a' }}>
-              {connected ? 'Connected' : 'Disconnected'}
+            <span className="text-[10px] uppercase tracking-wider text-slate-400">
+              {connected ? 'Simulated Live' : 'Paused'}
             </span>
           </div>
         </div>
@@ -103,7 +79,7 @@ export default function AlertPanel({ maxAlerts = 50, showHistorical = true }: Al
                   ? 'text-white'
                   : ''
               }`}
-              style={filter === f ? { background: '#1a1a1a', color: '#fff' } : { color: '#6b6b6b' }}
+              style={filter === f ? { background: '#0e7490', color: '#fff' } : { color: '#94a3b8' }}
             >
               {f}
             </button>
@@ -114,8 +90,7 @@ export default function AlertPanel({ maxAlerts = 50, showHistorical = true }: Al
       <div className="flex-1 overflow-y-auto space-y-2 pr-1">
         {filtered.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-3xl mb-2">📡</p>
-            <p className="text-sm" style={{ color: '#9a9a9a' }}>
+            <p className="text-sm text-slate-400">
               {connected ? 'Waiting for alerts...' : 'Connecting...'}
             </p>
           </div>
@@ -127,21 +102,21 @@ export default function AlertPanel({ maxAlerts = 50, showHistorical = true }: Al
                 alert.direction === 'BUY' ? 'border-l-2 border-l-emerald-400' :
                 alert.direction === 'SELL' ? 'border-l-2 border-l-red-400' : ''
               }`}
-              style={{ borderColor: 'rgba(0,0,0,0.06)', background: 'rgba(0,0,0,0.01)' }}
+              style={{ borderColor: 'rgba(148,163,184,0.14)', background: 'rgba(15,23,42,0.45)' }}
             >
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <Link href={`/stock/${alert.stock}`} className="text-sm font-semibold hover:underline" style={{ color: '#1a1a1a' }}>
+                  <Link href={`/stock/${alert.stock}`} className="text-sm font-semibold hover:underline text-cyan-300">
                     {alert.stock.replace('.NS', '')}
                   </Link>
                   {alert.direction === 'BUY' && <span className="badge-buy text-[10px]">BUY</span>}
                   {alert.direction === 'SELL' && <span className="badge-sell text-[10px]">SELL</span>}
                 </div>
-                <span className="text-[10px]" style={{ color: '#9a9a9a' }}>
+                <span className="text-[10px] text-slate-500">
                   {new Date(alert.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
                 </span>
               </div>
-              <p className="text-xs leading-relaxed" style={{ color: '#6b6b6b' }}>{alert.rule}</p>
+              <p className="text-xs leading-relaxed text-slate-300">{alert.rule}</p>
             </div>
           ))
         )}

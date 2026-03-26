@@ -10,7 +10,7 @@ import {
 import {
   Activity, TrendingUp, Brain, Shield, Zap, BarChart3,
   ArrowUpRight, ArrowDownRight, Clock, Target, Cpu,
-  Radio, Layers, Sparkles, ChevronRight, Hexagon, Eye, Menu, X
+  Radio, Layers, Sparkles, ChevronRight, Eye, Menu, X, Github
 } from 'lucide-react';
 
 // ============== MOCK DATA ==============
@@ -281,7 +281,7 @@ export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#030712]">
+    <div className="min-h-screen bg-[#05090f]">
       {/* Animated Background */}
       <div className="fixed inset-0 bg-grid-pattern bg-dots opacity-50" />
       <div className="fixed inset-0 bg-radial-glow" />
@@ -293,18 +293,19 @@ export default function LandingPage() {
       <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-xl bg-slate-900/80 border-b border-slate-800">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-cyan-500 to-violet-500 rounded-xl">
-              <Hexagon className="w-6 h-6 text-white" />
+            <div className="p-1 bg-gradient-to-br from-cyan-500/70 to-emerald-400/70 rounded-xl">
+              <img src="/favicon.jpg" alt="InvestorCopilot" className="w-8 h-8 rounded-lg object-cover" />
             </div>
             <span className="text-xl font-bold gradient-text">InvestorCopilot</span>
           </div>
           <div className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-slate-400 hover:text-white transition-colors">Features</a>
+            <Link href="/features" className="text-sm text-slate-400 hover:text-white transition-colors">Features</Link>
             <Link href="/alerts" className="text-sm text-slate-400 hover:text-white transition-colors">Alerts</Link>
             <Link href="/portfolio" className="text-sm text-slate-400 hover:text-white transition-colors">Portfolio</Link>
-            <Link href="/stock/RELIANCE.NS" className="btn-primary text-sm">
-              Launch App
-            </Link>
+            <a href="https://github.com/Mayank-iitj/investorcopilot.git" target="_blank" rel="noreferrer" className="btn-primary text-sm inline-flex items-center gap-2">
+              <img src="/favicon.jpg" alt="InvestorCopilot icon" className="w-4 h-4 rounded object-cover" />
+              <Github className="w-4 h-4" />
+            </a>
           </div>
           <button
             onClick={() => setMobileMenuOpen((prev) => !prev)}
@@ -316,22 +317,20 @@ export default function LandingPage() {
         </div>
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-slate-800 px-6 py-4 flex flex-col gap-3 bg-slate-900/95">
-            <a
-              href="#features"
-              onClick={() => setMobileMenuOpen(false)}
-              className="text-sm text-slate-300 hover:text-white"
-            >
+            <Link href="/features" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-300 hover:text-white">
               Features
-            </a>
+            </Link>
             <Link href="/alerts" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-300 hover:text-white">
               Alerts
             </Link>
             <Link href="/portfolio" onClick={() => setMobileMenuOpen(false)} className="text-sm text-slate-300 hover:text-white">
               Portfolio
             </Link>
-            <Link href="/stock/RELIANCE.NS" onClick={() => setMobileMenuOpen(false)} className="btn-primary text-sm text-center">
-              Launch App
-            </Link>
+            <a href="https://github.com/Mayank-iitj/investorcopilot.git" target="_blank" rel="noreferrer" className="btn-primary text-sm text-center inline-flex items-center justify-center gap-2">
+              <img src="/favicon.jpg" alt="InvestorCopilot icon" className="w-4 h-4 rounded object-cover" />
+              <Github className="w-4 h-4" />
+              GitHub
+            </a>
           </div>
         )}
       </nav>
@@ -377,15 +376,15 @@ export default function LandingPage() {
               transition={{ duration: 0.6, delay: 0.5 }}
               className="flex items-center justify-center gap-4"
             >
-              <button className="btn-glow">
+              <Link href="/features" className="btn-glow">
                 <span className="relative z-10 flex items-center gap-2">
                   <Sparkles className="w-5 h-5" />
-                  Start Free Trial
+                  Explore Features
                 </span>
-              </button>
-              <Link href="/stock/RELIANCE.NS" className="btn-secondary flex items-center gap-2">
+              </Link>
+              <Link href="/alerts" className="btn-secondary flex items-center gap-2">
                 <Eye className="w-4 h-4" />
-                View Demo
+                View Alerts
               </Link>
             </motion.div>
           </div>
@@ -431,10 +430,10 @@ export default function LandingPage() {
                     : 'text-slate-400 hover:text-white hover:bg-slate-800'
                 }`}
               >
-                {tab === 'signals' && '⚡ Signals'}
-                {tab === 'backtest' && '📊 Backtest'}
-                {tab === 'portfolio' && '💼 Portfolio'}
-                {tab === 'ai' && '🧠 AI Decision'}
+                {tab === 'signals' && 'Signals'}
+                {tab === 'backtest' && 'Backtest'}
+                {tab === 'portfolio' && 'Portfolio'}
+                {tab === 'ai' && 'AI Decision'}
               </button>
             ))}
           </div>
@@ -725,15 +724,14 @@ export default function LandingPage() {
                 Join 10,000+ traders using AI to make better decisions
               </p>
               <div className="flex items-center justify-center gap-4">
-                <button className="btn-glow">
-                  <span className="relative z-10 flex items-center gap-2">
-                    <Sparkles className="w-5 h-5" />
-                    Start Free Trial
-                  </span>
-                </button>
-                <Link href="/alerts" className="btn-secondary flex items-center gap-2">
+                <a href="https://github.com/Mayank-iitj/investorcopilot.git" target="_blank" rel="noreferrer" className="btn-glow inline-flex items-center gap-2">
+                  <img src="/favicon.jpg" alt="InvestorCopilot" className="w-5 h-5 rounded object-cover" />
+                  <Github className="w-5 h-5" />
+                  View Source
+                </a>
+                <Link href="/features" className="btn-secondary flex items-center gap-2">
                   <Layers className="w-4 h-4" />
-                  Open Live Alerts
+                  Feature Tour
                 </Link>
               </div>
             </div>
@@ -746,16 +744,14 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-cyan-500 to-violet-500 rounded-xl">
-                <Hexagon className="w-5 h-5 text-white" />
+              <div className="p-1 bg-gradient-to-br from-cyan-500/70 to-emerald-400/70 rounded-xl">
+                <img src="/favicon.jpg" alt="InvestorCopilot" className="w-7 h-7 rounded-lg object-cover" />
               </div>
               <span className="font-bold text-white">InvestorCopilot</span>
             </div>
-            <div className="flex items-center gap-6 text-sm text-slate-400">
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
-            </div>
+            <a href="https://github.com/Mayank-iitj/investorcopilot.git" target="_blank" rel="noreferrer" className="text-sm text-slate-400 hover:text-white transition-colors inline-flex items-center gap-2">
+              <Github className="w-4 h-4" /> GitHub
+            </a>
             <div className="text-sm text-slate-500">
               © 2026 InvestorCopilot. All rights reserved.
             </div>

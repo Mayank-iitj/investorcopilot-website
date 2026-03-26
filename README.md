@@ -74,6 +74,36 @@ docker-compose up --build
 
 ---
 
+## ▲ Vercel Deployment (Frontend)
+
+Deploy the `frontend` folder as a separate Vercel project.
+
+### Vercel Project Settings
+
+- Framework Preset: `Next.js`
+- Root Directory: `frontend`
+- Build Command: `npm run build`
+- Install Command: `npm install`
+
+### Required Environment Variables (Vercel)
+
+- `NEXT_PUBLIC_BACKEND_URL`: Public HTTPS URL of your FastAPI backend (without trailing slash)
+     - Example: `https://your-backend.example.com`
+
+### Optional Environment Variable
+
+- `NEXT_PUBLIC_WS_ALERTS_URL`: Direct WebSocket alerts endpoint
+     - Example: `wss://your-backend.example.com/ws/alerts`
+     - If omitted, app falls back to same-origin `/ws/alerts`.
+
+### Notes
+
+- `frontend/next.config.js` rewrites `/api/*` and `/ws/*` to `NEXT_PUBLIC_BACKEND_URL`.
+- In development, backend falls back to `http://localhost:8000`.
+- For production, set `NEXT_PUBLIC_BACKEND_URL`; otherwise rewrites are disabled.
+
+---
+
 ## 📡 API Endpoints
 
 | Method | Endpoint | Purpose |

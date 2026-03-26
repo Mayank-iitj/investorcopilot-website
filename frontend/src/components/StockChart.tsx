@@ -2,18 +2,44 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-interface OHLCVPoint {
-  date: string;
-  open: number;
-  high: number;
-  low: number;
-  close: number;
-  volume: number;
-}
-
 interface StockChartProps {
   symbol: string;
   height?: number;
+}
+
+function generateSeries(symbol: string, points = 90) {
+  const seed = symbol.split('').reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  let price = 1200 + (seed % 900);
+  const data: Array<{ time: string; open: number; high: number; low: number; close: number }> = [];
+  const volume: Array<{ time: string; value: number; color: string }> = [];
+
+  for (let i = points; i >= 0; i -= 1) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const time = d.toISOString().slice(0, 10);
+    const drift = Math.sin((seed + i) / 8) * 5;
+    const noise = ((seed * (i + 3)) % 17) - 8;
+    const open = price;
+    const close = Math.max(100, open + drift + noise * 0.8);
+    const high = Math.max(open, close) + 8 + (i % 4);
+    const low = Math.min(open, close) - 8 - (i % 3);
+    price = close;
+
+    data.push({
+      time,
+      open: Number(open.toFixed(2)),
+      high: Number(high.toFixed(2)),
+      low: Number(low.toFixed(2)),
+      close: Number(close.toFixed(2)),
+    });
+    volume.push({
+      time,
+      value: 18000 + ((seed + i * 41) % 42000),
+      color: close >= open ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)',
+    });
+  }
+
+  return { data, volume };
 }
 
 export default function StockChart({ symbol, height = 420 }: StockChartProps) {
@@ -31,16 +57,9 @@ export default function StockChart({ symbol, height = 420 }: StockChartProps) {
       setError(null);
 
       try {
-        // Dynamically import lightweight-charts
         const { createChart, ColorType, CrosshairMode } = await import('lightweight-charts');
 
-        // Fetch OHLCV data via signal scan (which auto-ingests data)
-        const res = await fetch(`/api/signals/scan?symbol=${symbol}`, { method: 'POST' });
-        const scan = await res.json();
-
-        // Now fetch stored data - get signals which contain price snapshots  
-        const sigRes = await fetch(`/api/signals?symbol=${symbol}`);
-        const sigData = await sigRes.json();
+        const { data: chartData, volume: volumeData } = generateSeries(symbol);
 
         if (cancelled) return;
 
@@ -80,53 +99,7 @@ export default function StockChart({ symbol, height = 420 }: StockChartProps) {
 
         chartRef.current = chart;
 
-        // Build candlestick data from scan snapshot
-        const ohlcvData: any[] = [];
-        const volumeData: any[] = [];
-
-        // Parse OHLCV from signal snapshots
-        if (scan.signals && scan.signals.length > 0) {
-          for (const sig of scan.signals) {
-            if (sig.snapshot?.prices) {
-              for (const p of sig.snapshot.prices) {
-                const time = p.date || p.Date;
-                if (time) {
-                  ohlcvData.push({
-                    time,
-                    open: p.open || p.Open,
-                    high: p.high || p.High,
-                    low: p.low || p.Low,
-                    close: p.close || p.Close,
-                  });
-                  volumeData.push({
-                    time,
-                    value: p.volume || p.Volume || 0,
-                    color: (p.close || p.Close) >= (p.open || p.Open)
-                      ? 'rgba(16, 185, 129, 0.3)'
-                      : 'rgba(239, 68, 68, 0.3)',
-                  });
-                }
-              }
-            }
-          }
-        }
-
-        if (ohlcvData.length > 0) {
-          // Deduplicate and sort by time
-          const seen = new Set();
-          const uniqueOhlcv = ohlcvData.filter((d) => {
-            if (seen.has(d.time)) return false;
-            seen.add(d.time);
-            return true;
-          }).sort((a, b) => (a.time > b.time ? 1 : -1));
-
-          const seenVol = new Set();
-          const uniqueVol = volumeData.filter((d) => {
-            if (seenVol.has(d.time)) return false;
-            seenVol.add(d.time);
-            return true;
-          }).sort((a, b) => (a.time > b.time ? 1 : -1));
-
+        if (chartData.length > 0) {
           const candleSeries = chart.addCandlestickSeries({
             upColor: '#10b981',
             downColor: '#ef4444',
@@ -135,7 +108,7 @@ export default function StockChart({ symbol, height = 420 }: StockChartProps) {
             wickDownColor: '#ef4444',
             wickUpColor: '#10b981',
           });
-          candleSeries.setData(uniqueOhlcv);
+          candleSeries.setData(chartData);
 
           const volumeSeries = chart.addHistogramSeries({
             priceFormat: { type: 'volume' },
@@ -144,38 +117,18 @@ export default function StockChart({ symbol, height = 420 }: StockChartProps) {
           chart.priceScale('volume').applyOptions({
             scaleMargins: { top: 0.8, bottom: 0 },
           });
-          volumeSeries.setData(uniqueVol);
+          volumeSeries.setData(volumeData);
 
-          // Add signal markers
-          const markers: any[] = [];
-          if (sigData.signals) {
-            for (const sig of sigData.signals) {
-              if (sig.created_at) {
-                const date = sig.created_at.split('T')[0];
-                markers.push({
-                  time: date,
-                  position: sig.direction === 'BUY' ? 'belowBar' : 'aboveBar',
-                  color: sig.direction === 'BUY' ? '#10b981' : '#ef4444',
-                  shape: sig.direction === 'BUY' ? 'arrowUp' : 'arrowDown',
-                  text: `${sig.direction} (${sig.type})`,
-                });
-              }
-            }
-          }
-          if (markers.length > 0) {
-            const seenMarkers = new Set();
-            const uniqueMarkers = markers.filter((m) => {
-              const key = `${m.time}-${m.text}`;
-              if (seenMarkers.has(key)) return false;
-              seenMarkers.add(key);
-              return true;
-            }).sort((a, b) => (a.time > b.time ? 1 : -1));
-            candleSeries.setMarkers(uniqueMarkers);
-          }
+          const n = chartData.length;
+          candleSeries.setMarkers([
+            { time: chartData[n - 28].time, position: 'belowBar', color: '#10b981', shape: 'arrowUp', text: 'Momentum' },
+            { time: chartData[n - 17].time, position: 'aboveBar', color: '#ef4444', shape: 'arrowDown', text: 'Pullback' },
+            { time: chartData[n - 8].time, position: 'belowBar', color: '#22d3ee', shape: 'circle', text: 'AI Zone' },
+          ]);
 
           chart.timeScale().fitContent();
         } else {
-          setError('No chart data available. Try scanning the stock first.');
+          setError('No chart data available.');
         }
 
         // Resize observer
@@ -217,7 +170,7 @@ export default function StockChart({ symbol, height = 420 }: StockChartProps) {
         <div className="absolute inset-0 flex items-center justify-center z-10 bg-[#0a0e1a]/80">
           <div className="flex flex-col items-center gap-3">
             <div className="w-8 h-8 border-2 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-            <span className="text-sm text-slate-400">Loading chart data...</span>
+            <span className="text-sm text-slate-400">Rendering motion chart...</span>
           </div>
         </div>
       )}

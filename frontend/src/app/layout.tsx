@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import InternalTopNav from '@/components/InternalTopNav';
 import RouteTransition from '@/components/RouteTransition';
+import WelcomeSplash from '@/components/WelcomeSplash';
 
 export const metadata: Metadata = {
   title: 'InvestorCopilot — AI Trading Intelligence',
@@ -16,7 +17,8 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark">
-      <body className="min-h-screen bg-[#030712] text-white antialiased">
+      <body className="min-h-screen bg-[#05090f] text-white antialiased">
+        <WelcomeSplash />
         <InternalTopNav />
         <RouteTransition>{children}</RouteTransition>
       </body>

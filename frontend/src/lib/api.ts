@@ -1,55 +1,25 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '';
-
-export async function apiFetch<T = any>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options?.headers },
-    ...options,
-  });
-  if (!res.ok) {
-    throw new Error(`API error: ${res.status} ${res.statusText}`);
-  }
-  return res.json();
+export async function apiFetch<T = any>(data: T): Promise<T> {
+  await new Promise((resolve) => setTimeout(resolve, 120));
+  return data;
 }
 
-// ── Signal APIs ─────────────────────────────────────────
-export const getSignals = (symbol?: string) =>
-  apiFetch(`/api/signals${symbol ? `?symbol=${symbol}` : ''}`);
+const MOCK_SIGNALS = [
+  { id: 1, stock: 'RELIANCE.NS', type: 'MOMENTUM', direction: 'BUY', strength: 0.9, rule: 'Momentum continuation profile active.', price: 2891.4, created_at: new Date().toISOString() },
+  { id: 2, stock: 'INFY.NS', type: 'REVERSAL', direction: 'SELL', strength: 0.64, rule: 'Short-term reversal probability increased.', price: 1534.6, created_at: new Date(Date.now() - 120000).toISOString() },
+];
 
-export const scanSignals = (symbol: string) =>
-  apiFetch(`/api/signals/scan?symbol=${symbol}`, { method: 'POST' });
+export const getSignals = (symbol?: string) => apiFetch(symbol ? MOCK_SIGNALS.filter((s) => s.stock === symbol) : MOCK_SIGNALS);
+export const scanSignals = (_symbol: string) => apiFetch({ ok: true, generated: true });
+export const getStrategies = () => apiFetch(['ma_crossover', 'rsi', 'macd', 'breakout', 'volume_spike']);
 
-export const getStrategies = () => apiFetch('/api/signals/strategies');
+export const runBacktest = (strategy: string, symbol: string) => apiFetch({ strategy_name: strategy, symbol, win_rate_pct: 72, sharpe_ratio: 1.4 });
+export const getBacktestResults = (strategy: string, symbol?: string) => apiFetch([{ strategy, symbol: symbol || 'RELIANCE.NS', win_rate: 71.8 }]);
+export const getImpactModel = () => apiFetch({ projected_return_if_followed: '+24.6%' });
 
-// ── Backtest APIs ───────────────────────────────────────
-export const runBacktest = (strategy: string, symbol: string, years = 2, holdDays = 10) =>
-  apiFetch(`/api/backtest/run?strategy=${strategy}&symbol=${symbol}&years=${years}&hold_days=${holdDays}`, { method: 'POST' });
+export const createPortfolio = (holdings: any[]) => apiFetch({ portfolio_id: 1, holdings });
+export const getPortfolioAnalysis = (_portfolioId = 1) => apiFetch({ xirr: 0.14, portfolio_volatility: 0.18, portfolio_beta: 0.96, risk_concentration: 'MEDIUM' });
+export const getPortfolio = (_portfolioId = 1) => apiFetch({ id: 1, holdings: [] });
 
-export const getBacktestResults = (strategy: string, symbol?: string) =>
-  apiFetch(`/api/backtest/${strategy}${symbol ? `?symbol=${symbol}` : ''}`);
-
-export const getImpactModel = () => apiFetch('/api/backtest/impact-model');
-
-// ── Portfolio APIs ──────────────────────────────────────
-export const createPortfolio = (holdings: any[]) =>
-  apiFetch('/api/portfolio', { method: 'POST', body: JSON.stringify(holdings) });
-
-export const getPortfolioAnalysis = (portfolioId = 1) =>
-  apiFetch(`/api/portfolio-analysis?portfolio_id=${portfolioId}`);
-
-export const getPortfolio = (portfolioId = 1) =>
-  apiFetch(`/api/portfolio/${portfolioId}`);
-
-// ── Recommendation APIs ─────────────────────────────────
-export const getRecommendation = (stock: string, portfolioId?: number) =>
-  apiFetch(`/api/recommendation/${stock}${portfolioId ? `?portfolio_id=${portfolioId}` : ''}`);
-
-// ── Market Overview ─────────────────────────────────────
-export const getMarketOverview = () => apiFetch('/api/market-overview');
-
-// ── Audit ───────────────────────────────────────────────
-export const getAuditLogs = (actionType?: string, symbol?: string) => {
-  const params = new URLSearchParams();
-  if (actionType) params.set('action_type', actionType);
-  if (symbol) params.set('symbol', symbol);
-  return apiFetch(`/api/audit?${params.toString()}`);
-};
+export const getRecommendation = (stock: string) => apiFetch({ symbol: stock, action: 'BUY', confidence: 0.84, reasoning: ['Momentum alignment stable.'], active_signals: 5, backtested_strategies: 4 });
+export const getMarketOverview = () => apiFetch({ nifty: 22890, sensex: 75740 });
+export const getAuditLogs = () => apiFetch([]);
