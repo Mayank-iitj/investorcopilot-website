@@ -38,7 +38,7 @@ export default function WelcomeSplash() {
               <DotLottieReact src="/loading.lottie" autoplay loop />
             </div>
             <p className="text-center text-sm md:text-base text-slate-200 mt-2">
-              This a an illustratation , the actual software differs
+              This is an illustration , the actual software differs
             </p>
           </motion.div>
         </motion.div>
